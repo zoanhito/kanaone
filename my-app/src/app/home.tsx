@@ -159,7 +159,7 @@ const Home = ({onClick}: homeProps) => {
             <div className="flex min-h-screen place-content-center p-20 ">
                 <div className="min-w-fit m-auto h-full w-fit max-w-lg bg-white border border-gray-200 rounded-lg shadow">
                     <div className="px-8 py-6">
-                        <h1 className=" text-center mb-4  mt-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-6xl lg:text-6xl">
+                        <h1 className=" text-center mb-4 mt-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-6xl lg:text-6xl">
                             {"Kana Practice"}
                         </h1>
                         <div className="flex flex-col items-center">
