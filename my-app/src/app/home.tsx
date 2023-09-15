@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import Button, { buttonProps, buttonType } from "./components/button";
+import ButtonGroup, { buttonProps } from "./components/button";
+import { buttonType } from "./constants/enums";
 
 interface homeProps {
-    OnClick: (arg: any) => any;
+    onClick: (arg: any) => any;
 }
 
-const Home = ({OnClick}: homeProps) => {
+const Home = ({onClick}: homeProps) => {
 
 
     const defaultbuttonOptions = [
@@ -36,19 +37,19 @@ const Home = ({OnClick}: homeProps) => {
         },
         {
             type: buttonType.daku, 
-            disabled: false,
+            disabled: true,
             selected: false,
             group: 3,
         },
         {
             type: buttonType.combo, 
-            disabled: false,
+            disabled: true,
             selected: false,
             group: 3,
         },
         {
             type: buttonType.start, 
-            disabled: false,
+            disabled: true,
             selected: false,
             group: 4,
         }
@@ -57,110 +58,119 @@ const Home = ({OnClick}: homeProps) => {
     const [buttonOptions, setButtonOptions] = useState(defaultbuttonOptions);
 
     const homeOnClick = (btn:buttonProps) => {
-
+        if(btn.disabled){
+            return;
+        }
+        
         const checkForAllSelected = () => {
             var count = 0;
             buttonOptions.forEach(x => (
-                (x.type == buttonType.kata || x.type == buttonType.hira || x.type == buttonType.daku || x.type == buttonType.combo) && x.selected == true ? count++ : {}
+                (x.type === buttonType.kata || x.type === buttonType.hira || x.type === buttonType.daku || x.type === buttonType.combo) && x.selected ? count++ : {}
             ));
             return count == 3;
         }
 
         const toggleSelected = (type: buttonType) => {
-            const newOptions = btn.selected == true ? 
+            var newOptions = btn.selected ? 
             buttonOptions.map(x => (
-                x.type == type || x.type == buttonType.all? {...x, selected: !btn.selected} : {...x}
+                x.type === type || x.type === buttonType.all ? {...x, selected: !btn.selected} : {...x}
             ))
             : checkForAllSelected() ? 
             buttonOptions.map(x => (
-                x.type == type || x.type == buttonType.all? {...x, selected: true} : {...x}
+                x.type === type || x.type === buttonType.all ? {...x, selected: true} : {...x}
             ))
             : buttonOptions.map(x => (
-                x.type == type ? {...x, selected: !btn.selected} : {...x}
+                x.type === type ? {...x, selected: !btn.selected} : {...x}
             ));
 
+            const checkIfComboDakuShouldBeDisabled = () => {
+                var count = 0;
+                newOptions.forEach(x => (
+                    (x.type == buttonType.kata || x.type == buttonType.hira ) && x.selected ? count++ : {}
+                ));
+                return count < 1;
+            }
+    
+            newOptions = checkIfComboDakuShouldBeDisabled() ? 
+            newOptions.map(x => (
+                x.type === buttonType.combo || x.type === buttonType.daku ? {...x, selected: false, disabled: true} : {...x}
+            ))
+            : newOptions.map(x => (
+                x.type === buttonType.combo || x.type === buttonType.daku ? {...x, selected: x.selected, disabled: false} : {...x}
+            ));
 
             return newOptions;
         }
+        
+        var newButtonOptions = defaultbuttonOptions;
 
         if(btn.type != buttonType.all && btn.type != buttonType.start && btn.type != buttonType.random && !btn.disabled){
-            setButtonOptions(toggleSelected(btn.type));
+            newButtonOptions = toggleSelected(btn.type);
         }
 
-    switch (btn.type){
-        case buttonType.all:{
-
-            const newOptions = btn.selected == true ?
-            buttonOptions.map(x => (
-                x.type != buttonType.random && x.type != buttonType.start ? {...x, selected: false} : {...x}
-            ))
-            : buttonOptions.map(x => (
-                x.type == buttonType.start || x.type == buttonType.random ? {...x, selected: false} : {...x, selected: true, disabled: false}
-            ));
-
-
-            setButtonOptions(newOptions);
-
-            break;
+        switch (btn.type){
+            case buttonType.all:{
+                newButtonOptions = btn.selected ?
+                defaultbuttonOptions
+                : buttonOptions.map(x => (
+                    x.type == buttonType.start || x.type == buttonType.random ? {...x, selected: false} : {...x, selected: true, disabled: false}
+                ));
+                break;
+            }
+            case buttonType.random:{
+                newButtonOptions = btn.selected ?
+                defaultbuttonOptions
+                : buttonOptions.map(x => (
+                    x.type == buttonType.random ? {...x, selected: true} 
+                    : x.type == buttonType.all ? {...x, selected: false} 
+                    : x.type != buttonType.start ? {...x, selected: false, disabled: true}
+                    : {...x}
+                ));
+                break;
+            }
         }
-        case buttonType.random:{
-            const newOptions = btn.selected == true ?
-            buttonOptions.map(x => (
-                x.type == buttonType.random ? {...x, selected: false} : {...x, disabled: false}
-            ))
-            : buttonOptions.map(x => (
-                x.type == buttonType.random ? {...x, selected: true} 
-                : x.type == buttonType.all ? {...x, selected: false} 
-                : x.type != buttonType.start ? {...x, selected: false, disabled: !x.disabled}
-                : {...x}
-            ));
 
+        const canStart = () => {
+            var can = false;
+            newButtonOptions.forEach((x)=>{
+                if(x.selected){
+                    can = true;
+                }
+            })
 
-            setButtonOptions(newOptions);
-
-            break;
+            return can;
         }
+
+        newButtonOptions = canStart() ? 
+        newButtonOptions.map(x => (
+            x.type === buttonType.start ? {...x, disabled: false} : {...x}
+        ))
+        : newButtonOptions.map(x => (
+            x.type === buttonType.start ? {...x, disabled: true} : {...x}
+        ));
+
+        setButtonOptions(newButtonOptions);
+        onClick(btn);
     }
-
-    OnClick(btn.type);
-}
 
 
     return (
         <>
-            <main className="flex min-h-screen flex-col items-center place-content-center p-20">
-                <h1 className="text-6xl">
-                    Practice Kana
-                </h1>
-                <div className="inline-flex" role="group">
-                    {
-                        buttonOptions.map(button => (
-                            button.group == 1 ? <Button {...button} key={button.type} onClick={homeOnClick}/> : <></>
-                        ))
-                    }
+            <div className="flex min-h-screen place-content-center p-20 ">
+                <div className="min-w-fit m-auto h-full w-fit max-w-lg bg-white border border-gray-200 rounded-lg shadow">
+                    <div className="px-8 py-6">
+                        <h1 className=" text-center mb-4  mt-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-6xl lg:text-6xl">
+                            {"Kana Practice"}
+                        </h1>
+                        <div className="flex flex-col items-center">
+                            <ButtonGroup buttonOptions={buttonOptions.filter(x=>x.group==1)} onClick={homeOnClick}/>
+                            <ButtonGroup buttonOptions={buttonOptions.filter(x=>x.group==2)} onClick={homeOnClick}/>
+                            <ButtonGroup buttonOptions={buttonOptions.filter(x=>x.group==3)} onClick={homeOnClick}/>
+                            <ButtonGroup buttonOptions={buttonOptions.filter(x=>x.group==4)} onClick={homeOnClick}/>
+                        </div>
+                    </div>
                 </div>
-                <div className="inline-flex" role="group">
-                    {
-                        buttonOptions.map(button => (
-                            button.group == 2 ? <Button {...button} key={button.type} onClick={homeOnClick}/> : <></>
-                        ))
-                    }
-                </div>
-                <div className="inline-flex" role="group">
-                    {
-                        buttonOptions.map(button => (
-                            button.group == 3 ? <Button {...button} key={button.type} onClick={homeOnClick}/> : <></>
-                        ))
-                    }
-                </div>
-                <div className="inline-flex" role="group">
-                    {
-                        buttonOptions.map(button => (
-                            button.group == 4 ? <Button {...button} key={button.type} onClick={homeOnClick}/> : <></>
-                        ))
-                    }
-                </div>
-            </main>
+            </div>
         </>
     )
 }
